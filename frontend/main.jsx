@@ -5,7 +5,6 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { injected } from "wagmi/connectors";
 import App from "./App";
-import "./styles.css";
 
 const queryClient = new QueryClient();
 

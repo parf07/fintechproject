@@ -35,9 +35,14 @@ async function refreshMetrics() {
 
     // Keep RPC usage small to avoid provider rate-limits in shared/free tiers.
     const latest = await clientViem.getBlock({ includeTransactions: true });
-    const total = latest.transactions.length;
-    // Pending txs are excluded because includeTransactions=true returns mined tx objects.
-    txSuccessGauge.set(total === 0 ? 1 : 1);
+    const receipts = await Promise.all(
+      latest.transactions.slice(0, 20).map((tx) =>
+        clientViem.getTransactionReceipt({ hash: tx.hash }).catch(() => null)
+      )
+    );
+    const valid = receipts.filter(Boolean);
+    const successCount = valid.filter((r) => r.status === "success").length;
+    txSuccessGauge.set(valid.length === 0 ? 1 : successCount / valid.length);
   } catch (error) {
     console.error("metrics refresh failed", error.message);
   }
