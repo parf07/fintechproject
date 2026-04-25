@@ -1,0 +1,48 @@
+services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command: anvil --host 0.0.0.0 --port 8545
+    ports:
+      - "8545:8545"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      - VITE_SEPOLIA_RPC_URL=${VITE_SEPOLIA_RPC_URL}
+      - VITE_VAULT_PROXY_ADDRESS=${VITE_VAULT_PROXY_ADDRESS}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - anvil
+
+  exporter:
+    build:
+      context: .
+      dockerfile: monitoring/Dockerfile
+    environment:
+      - VAULT_PROXY_ADDRESS=${VITE_VAULT_PROXY_ADDRESS}
+      - METRICS_RPC_URL=${VITE_SEPOLIA_RPC_URL}
+    ports:
+      - "9091:9091"
+    depends_on:
+      - anvil
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - exporter
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
