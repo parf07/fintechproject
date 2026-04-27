@@ -4,4 +4,5 @@ global:
 scrape_configs:
   - job_name: "vault-exporter"
     static_configs:
-      - targets: ["exporter:9091"]
+      - targets: ["vault-exporter:9091"]
+npm
